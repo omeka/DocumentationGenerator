@@ -1,0 +1,6 @@
+    {
+        ...
+        "require": {
+            "sphpdox/sphpdox": "dev-master"
+        }
+    }
