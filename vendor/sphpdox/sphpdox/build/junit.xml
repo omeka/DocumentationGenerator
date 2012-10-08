@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Default Testsuite" tests="6" assertions="24" failures="0" errors="0" time="0.040720">
+    <testsuite name="Sphpdox\Tests\CommentParserTest" file="/var/www/html/sphpdox/vendor/sphpdox/sphpdox/lib/Sphpdox/Tests/CommentParserTest.php" namespace="Sphpdox\Tests" fullPackage="Sphpdox.Tests" tests="6" assertions="24" failures="0" errors="0" time="0.040720">
+      <testsuite name="Sphpdox\Tests\CommentParserTest::testParse" tests="6" assertions="24" failures="0" errors="0" time="0.040720">
+        <testcase name="testParse with data set #0" assertions="4" time="0.033080"/>
+        <testcase name="testParse with data set #1" assertions="4" time="0.001788"/>
+        <testcase name="testParse with data set #2" assertions="4" time="0.001507"/>
+        <testcase name="testParse with data set #3" assertions="4" time="0.001039"/>
+        <testcase name="testParse with data set #4" assertions="4" time="0.001244"/>
+        <testcase name="testParse with data set #5" assertions="4" time="0.002062"/>
+      </testsuite>
+    </testsuite>
+  </testsuite>
+</testsuites>

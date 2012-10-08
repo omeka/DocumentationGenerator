@@ -1,0 +1,2 @@
+./sphpdox.php process -o /var/www/html/Documentation/source/Reference/$1 -t $1 no-namespace /var/www/html/Omeka/application/$1
+
