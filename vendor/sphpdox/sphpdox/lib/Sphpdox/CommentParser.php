@@ -115,8 +115,7 @@ class CommentParser
             $this->shortDescription = trim($first);
 
             $rest = array_slice($parts, 1);
-
-            if(count($rest) > 2) {
+            if(count($rest) > 1) {
                 foreach($rest as $i=>$line) {
                     $lines = explode("\n", $line);
                     if(count($lines) > 2) {
@@ -159,10 +158,10 @@ class CommentParser
                 if($line == '</code>') {
                     $keepFormatting = false;
                 } else if ($line == "</ul>" || $line == "</ol>") {
-                    $text .= "        $line\n";
-                    $text = false;
+                    $text .= "\t                $line\n";
+                    $keepFormatting = false;
                 } else {
-                    $text .= "        $line\n";
+                    $text .= "\t               $line\n";
                 }
         
             } else {

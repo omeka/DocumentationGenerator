@@ -7,11 +7,12 @@
  * 
  */
 
+error_reporting(~E_ALL);
 define('PATH_TO_OMEKA_GLOBALS', '/var/www/html/Omeka/application/libraries/globals.php' );
 define('PATH_TO_SPHDOX', '/var/www/html/sphpdox/' );
 define('PATH_TO_DOCUMENTATION_GLOBALS', "/var/www/html/Documentation/source/Reference/libraries/globals/");
 
-require_once '/var/www/html/Omeka/paths.php';
+require_once '/var/www/html/Omeka/bootstrap.php';
 require_once(PATH_TO_OMEKA_GLOBALS);
 require_once(PATH_TO_SPHDOX . '/vendor/sphpdox/sphpdox/lib/Sphpdox/CommentParser.php');
 require_once(PATH_TO_SPHDOX . '/vendor/sphpdox/sphpdox/lib/Sphpdox/Element/Element.php');
@@ -106,10 +107,12 @@ class OmekaGlobalsDocumentor {
 
         $reflection = new ReflectionFunction($functionName);
         $this->reflection = $reflection;
-        $parameters = $this->reflection->getParameters();
+     //   $parameters = $this->reflection->getParameters();
 
-        $this->functionName = $functionName;
-        $file = PATH_TO_DOCUMENTATION_GLOBALS . $this->functionName . ".rst";
+     //   $this->functionName = $functionName;
+        $file = PATH_TO_DOCUMENTATION_GLOBALS . $this->getFunctionName() . ".rst";
+        echo "\n$file\n";
+        $this->buildSubFiles();
         $rst = $this->buildFile();
         file_put_contents($file, $rst);
 
@@ -130,10 +133,27 @@ class OmekaGlobalsDocumentor {
         $template .= "$headingBar\n";
         $template .=  $functionName . "\n";
         $template .= "$headingBar\n\n";
+        $template .= $this->getSummary() . "\n\n";
         $template .= $this->getRest() . "\n\n";
         $template .= $this->getUsage() . "\n\n";
         $template .= $this->getExamples() . "\n\n"; 
+        $template .= $this->getSeeAlso() . "\n\n";
         return $template;
+    }
+    
+    public function buildSubFiles()
+    {
+        $fileName = $this->getFunctionName() . ".rst";
+        $subdirs = array('examples', 'usage', 'see_also', 'summary');
+        foreach($subdirs as $section) {
+            if(!is_dir(PATH_TO_DOCUMENTATION_GLOBALS . "$section")) {
+                mkdir(PATH_TO_DOCUMENTATION_GLOBALS . "$section");
+            }
+            $file = PATH_TO_DOCUMENTATION_GLOBALS . "$section/" . $this->getFunctionName() . ".rst";
+            if(! file_exists($file)) {
+                file_put_contents($file, '');
+            }
+        }
     }
     
     public function getFunctionName()
@@ -141,55 +161,50 @@ class OmekaGlobalsDocumentor {
         return $this->reflection->getName();
     }
     
+    public function getSummary()
+    {
+        $rst = "*******\nSummary\n*******\n\n";
+        $rst .= ".. include:: summary/" . $this->getFunctionName() . ".rst";
+        return $rst;        
+    }
+    
+    public function getSeeAlso()
+    {
+            $rst = "********\nSee Also\n********\n\n";
+            $rst .= ".. include:: see_also/" . $this->getFunctionName() . ".rst";
+            return $rst;
+    }
+    
     public function getRest()
     {
         $fcnElement = new FunctionElement($this->reflection);
         return $fcnElement;
     }
+
     
     public function getUsage()
     {
         $rst = "*****\nUsage\n*****\n\n";
-        if ($usage = $this->getUsageFile()) {
-            $rst .= $usage;
-        }
+        $rst .= ".. include:: usage/" . $this->getFunctionName() . ".rst";
         return $rst;        
     }
     
     public function getExamples()
     {
-        $rst = "********\nExamples\n********\n\n";
-        if ($usage = $this->getExamplesFile()) {
-            $rst .= $examples;
-        }
-        return $rst;        
-        
-    }
+        $rst = "********\nExamples\n********\n\n";            
+        $rst .= ".. include:: examples/" . $this->getFunctionName() . ".rst";
+        return $rst;                
+    }    
     
-    public function getUsageFile()
-    {
-        $file = PATH_TO_DOCUMENTATION_GLOBALS . "usage/" . $this->functionName . ".rst";
-        if(file_exists($file)) {
-            return file_get_contents($file);
-        }
-        return false;        
-    }
-    
-    public function getExamplesFile()
-    {
-        $file = PATH_TO_DOCUMENTATION_GLOBALS . "examples/" . $this->functionName . ".rst";
-        if(file_exists($file)) {
-            return file_get_contents($file);
-        }
-        return false;
-    }
 }
-$allFunctions = $arr = get_defined_functions();
+
+$allFunctions = get_defined_functions();
 $globals = $allFunctions['user'];
 //$globals = array('is_allowed');
-//$globals = array('insert_item');
+//$globals = array('fire_plugin_hook');
 foreach($globals as $function) {
-    echo $function;
+   //echo $function;
    $fcn = new OmekaGlobalsDocumentor($function);
+
 }
 
