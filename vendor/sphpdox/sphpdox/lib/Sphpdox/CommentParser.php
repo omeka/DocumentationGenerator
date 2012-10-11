@@ -68,8 +68,7 @@ class CommentParser
             if($line == "<ul>" || $line == "<ol>") {
                 $keepFormatting = true;
                 $tag = $line;
-                $line = "\n\n    .. raw:: html\n\n       $line";
-                
+                $line = "\n\n    .. raw:: html\n\n       $line";                
             }            
             
             if ($line[0] == '@') {
@@ -115,15 +114,16 @@ class CommentParser
             $this->shortDescription = trim($first);
 
             $rest = array_slice($parts, 1);
-            if(count($rest) > 1) {
-                foreach($rest as $i=>$line) {
-                    $lines = explode("\n", $line);
-                    if(count($lines) > 2) {
-                        $rest[$i] = $this->linesToText($lines);
-                    }
+
+            foreach($rest as $i=>$line) {
+                $lines = explode("\n", $line);
+                
+                if(count($lines) > 2) {
+                    
+                    $rest[$i] = $this->linesToText($lines);
                 }
             }
-            
+
             if ($rest) {
                 $long = implode("\n\n", $rest);
                 $long = preg_replace('/(\w) *\n *(\w)/', '\1 \2', $long);
@@ -140,7 +140,6 @@ class CommentParser
      */
     protected function linesToText($lines)
     {
-
         $text = '';
         $keepFormatting = false;
         foreach ($lines as $line) {
@@ -153,7 +152,7 @@ class CommentParser
                 $tag = $line;
                 $line = "\n\n    .. raw:: html\n\n       $line";        
             }
-        
+                   
             if($keepFormatting) {
                 if($line == '</code>') {
                     $keepFormatting = false;
@@ -162,8 +161,10 @@ class CommentParser
                     $keepFormatting = false;
                 } else {
                     $text .= "\t               $line\n";
-                }
-        
+                }       
+            } else if(substr($line, 0, 1) == '-') {
+                $line = "\n\n$line";
+                $text .= $line;
             } else {
                 $text .= trim($line);
             }        
