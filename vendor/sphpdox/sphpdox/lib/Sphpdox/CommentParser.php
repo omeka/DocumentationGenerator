@@ -8,6 +8,7 @@ class CommentParser
     protected $shortDescription;
     protected $longDescription = null;
     protected $annotations = array();
+    protected $package;
 
     /**
      * @param string $docblock
@@ -70,6 +71,11 @@ class CommentParser
                 $tag = $line;
                 $line = "\n\n    .. raw:: html\n\n       $line";                
             }            
+            
+            if(substr($line, 0, 15) == '@package Omeka\\') {
+                
+                $this->package = substr($line, 15);
+            }
             
             if ($line[0] == '@') {
                 if ($annotation) {
@@ -196,6 +202,11 @@ class CommentParser
     {
         return $this->longDescription;
          
+    }
+    
+    public function getPackage()
+    {
+        return $this->package;
     }
 
     public function hasDescription()

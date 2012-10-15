@@ -52,10 +52,32 @@ class ClassElement extends Element
         if(!is_dir($basedir)) {
             mkdir($basedir);
         }
-        //$file = $basedir . DIRECTORY_SEPARATOR . $this->getPath();
         // end PMJ hacks
         
         file_put_contents($file, $this->__toString());
+        
+        //PMJ hack for packages. lamely saving a second copy of the same file so the indices
+        //are easier to make
+        $parser = $this->getParser();
+        $package = $parser->getPackage();
+        if($package)  {
+            $packagePath = str_replace("\\", "/", $package);
+            $path = "/var/www/html/Documentation/source/Reference/packages/$packagePath";
+            if(!is_dir($path)) {
+                mkdir($path, 0777 ,true);
+            }
+            $file = $path . '/' . $realPath;
+            file_put_contents($file, $this->__toString());
+        
+            $index = "#######################################\n";
+            $index .= $package . "\n";
+            $index .= "#######################################\n\n";
+            $index .= ".. toctree::\n";
+            $index .= "    :glob:\n\n";
+            $index .= "    *\n";
+            $index .= "    */index";
+            file_put_contents($path . '/index.rst', $index);        
+        }
     }
 
     /**
@@ -70,10 +92,20 @@ class ClassElement extends Element
         $string .= '.. php:class:: ' . $name;
         $parser = $this->getParser();
 
+
+
+        /* PMJ hacks to add @package info */
+        $package = $parser->getPackage();
+        if($package) {
+            $string .= "\n\n";
+            $string .= $this->indent("Package: $package", 4);
+        }
+                
         if ($description = $parser->getDescription()) {
             $string .= "\n\n";
             $string .= $this->indent($description, 4);
         }
+        
         foreach ($this->getSubElements() as $element) {
             $e = $element->__toString();            
             if ($e) {
@@ -81,6 +113,7 @@ class ClassElement extends Element
                 $string .= $this->indent($e, 4);
             }
         }
+        
         return $string;
     }
 
