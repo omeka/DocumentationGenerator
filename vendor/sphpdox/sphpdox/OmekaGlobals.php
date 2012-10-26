@@ -20,10 +20,17 @@ require_once(PATH_TO_SPHDOX . '/vendor/sphpdox/sphpdox/lib/Sphpdox/Element/Metho
 
 class FunctionElement extends Sphpdox\Element\MethodElement
 {
+    public $package = null;
     
     public function __construct($functionReflection)
     {
         $this->reflection = $functionReflection;
+        $this->package = $this->getParser()->getPackage();
+    }
+    
+    public function getPackage()
+    {
+        return $this->package;
     }
     
     protected function getParameterInfo()
@@ -111,11 +118,50 @@ class OmekaGlobalsDocumentor {
 
      //   $this->functionName = $functionName;
         $file = PATH_TO_DOCUMENTATION_GLOBALS . $this->getFunctionName() . ".rst";
-        echo "\n$file\n";
+        
         $this->buildSubFiles();
         $rst = $this->buildFile();
+        
+        
         file_put_contents($file, $rst);
+        
+        //PMJ hack for packages. lamely saving a second copy of the same file so the indices
+        //are easier to make
+        $package = $this->getPackage();
+        if($package)  {
 
+            $packagePath = str_replace("\\", "/", $package);
+            $path = "/var/www/html/Documentation/source/Reference/packages/$packagePath";
+            if(!is_dir($path)) {
+                mkdir($path, 0777 ,true);
+            }
+
+            file_put_contents($path . "/" . $this->getFunctionName() . ".rst", $rst);
+                                
+            $exploded = explode('\\', $package);
+            $packagePart =  array_pop($exploded);
+            $packageText = "$packagePart-related functions";
+            $packageNameLength = strlen($packageText);
+            
+            $headingBar = "";
+            for($i = 0; $i < $packageNameLength; $i++) {
+                $headingBar .= "#";
+            }
+
+            
+            $index = "$headingBar\n";
+            $index .= $packageText . "\n";
+            $index .= "$headingBar\n\n";
+            $index .= "Up to :doc:`../index`\n\n";
+            $index .= ".. toctree::\n";
+            $index .= "    :maxdepth: 1\n";
+            $index .= "    :glob:\n\n";
+            $index .= "    */index\n";
+            $index .= "    *\n";
+            
+            file_put_contents($path . '/index.rst', $index);
+            
+        }
     }
 
     public function buildFile()
@@ -133,6 +179,20 @@ class OmekaGlobalsDocumentor {
         $template .= "$headingBar\n";
         $template .=  $functionName . "\n";
         $template .= "$headingBar\n\n";
+        
+        $package = $this->getPackage();
+        $exploded = explode('\\', $package);
+        $packagePart =  array_pop($exploded);
+        $packageText = "$packagePart-related functions";
+        
+        if($package) {       
+            $packagePath = str_replace("\\", "/", $package);
+            $template .= ":doc:`$packageText </Reference/packages/$packagePath/index>`";
+            $template .= "\n\n";
+        } else {
+            echo "\nNo package: $functionName";
+        }
+        
         $template .= $this->getSummary() . "\n\n";
         $template .= $this->getRest() . "\n\n";
         $template .= $this->getUsage() . "\n\n";
@@ -164,14 +224,14 @@ class OmekaGlobalsDocumentor {
     public function getSummary()
     {
         $rst = "*******\nSummary\n*******\n\n";
-        $rst .= ".. include:: summary/" . $this->getFunctionName() . ".rst";
+        $rst .= ".. include:: /Reference/libraries/globals/summary/" . $this->getFunctionName() . ".rst";
         return $rst;        
     }
     
     public function getSeeAlso()
     {
             $rst = "********\nSee Also\n********\n\n";
-            $rst .= ".. include:: see_also/" . $this->getFunctionName() . ".rst";
+            $rst .= ".. include:: /Reference/libraries/globals/see_also/" . $this->getFunctionName() . ".rst";
             return $rst;
     }
     
@@ -185,16 +245,24 @@ class OmekaGlobalsDocumentor {
     public function getUsage()
     {
         $rst = "*****\nUsage\n*****\n\n";
-        $rst .= ".. include:: usage/" . $this->getFunctionName() . ".rst";
+        $rst .= ".. include:: /Reference/libraries/globals/usage/" . $this->getFunctionName() . ".rst";
         return $rst;        
     }
     
     public function getExamples()
     {
         $rst = "********\nExamples\n********\n\n";            
-        $rst .= ".. include:: examples/" . $this->getFunctionName() . ".rst";
+        $rst .= ".. include:: /Reference/libraries/globals/examples/" . $this->getFunctionName() . ".rst";
         return $rst;                
     }    
+    
+    public function getPackage()
+    {
+        $functionEl = $this->getRest();
+        $package = $functionEl->getPackage();
+        return $package;
+        
+    }
     
 }
 
@@ -202,8 +270,11 @@ $allFunctions = get_defined_functions();
 $globals = $allFunctions['user'];
 //$globals = array('is_allowed');
 //$globals = array('fire_plugin_hook');
+$functions = '';
 foreach($globals as $function) {
-   //echo $function;
+   echo "$function\n";
+   $functions .= "$function\n";
+   //file_put_contents('functions.txt', $functions);
    $fcn = new OmekaGlobalsDocumentor($function);
 
 }

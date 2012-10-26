@@ -95,7 +95,13 @@ class NamespaceElement extends Element
                 mkdir($path);
             }
         }
-        foreach ($this->getClasses() as $element) {   
+        $serializedMap = file_get_contents('/var/www/html/sphpdox/vendor/sphpdox/sphpdox/serializedPackagesMap.txt');
+        
+        $packagesMap = unserialize($serializedMap);
+        if(!is_array($packagesMap)) {
+            $packagesMap = array();
+        }
+        foreach ($this->getClasses() as $element) { 
             
             //PMJ hackery
             //the classes for some reason include both the classes in the directory, and the classes below
@@ -110,50 +116,26 @@ class NamespaceElement extends Element
             //since the target is system-specific, count backward from then end of the explodedTarget
             //controllers and helpers 
             $etCount = count($explodedTarget);
-            
-            //skip the helpers caught up in the controllers processing
-            if($explodedTarget[$etCount - 1] == 'controllers') {
-                
-                if(isset($classParts[3]) && $classParts[3] == 'Helper') {
-                    continue;
-                } else {                 
-                    $element->build($target, $output);
-                    continue;
-                }                                
-            }
-            //controller helpers 
-            if($explodedTarget[$etCount - 2] == 'controllers' ) {
-                $element->build($target, $output);
-                continue;
-            
-            }            
-            
-            //no issues with the views/helpers directory, except FileMarkup -- complains "property is not optional" with no more info
-            if($classParts[0] == 'Omeka' &&
-               $classParts[1] == 'View' &&
-               $classParts[2] == 'Helper' && 
-               $classParts[3] != 'FileMarkup.rst') {
-                try{
-                    $element->build($target, $output);
-                } catch (Exception $e) {
-                    echo $e;
-                }
-                continue;
-                
-            }
-            
-            //this works for the models directory
-            if(isset($classParts[count($classParts) -2] )) {
-                $lastClassPart = $classParts[count($classParts) -2];
-                if($lastClassPart != $lastTargetPart) {
-                 //   echo "\n$target\n";
-                 //   print_r($classParts);
-                    continue;
-                }                                
-            }
+    
             $element->build($target, $output);
+            
+            //PMJ build the info for package links
+            //arrays of package name and references to where in the documentation the
+            //actual file is.
+            //a separate script will need to read the array once all the 
+            //documentation has been built and from that build the packages
+            //directory with correct :doc: references back to the file
+            $package = $element->getPackage();
+            $package = str_replace('\\', '/', $package);
+            
+            $packagesMap[$package][] = array('name' => $element->getName(), 
+                                              'path' => str_replace('/var/www/html/Documentation/source', '',  $element->file)
+                                              );
+            file_put_contents('/var/www/html/sphpdox/vendor/sphpdox/sphpdox/serializedPackagesMap.txt', serialize($packagesMap));
+            
         }
 
+        
         $built_iterator = new DirectoryIterator($target);
 
         $index = $target . DIRECTORY_SEPARATOR . 'index.rst';
