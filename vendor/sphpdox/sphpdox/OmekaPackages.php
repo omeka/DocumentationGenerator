@@ -11,19 +11,13 @@
  */
 
 
-function sortByClassName($a, $b) {
-    
-    
-}
-
 function flatten($fileRefs) {
     $flattened = array();
     foreach($fileRefs as $fileRef) {
         $flattened[$fileRef['name']] = $fileRef['path'];
     }
     ksort($flattened);
-    return $flattened;
-    
+    return $flattened;    
 }
 
 $serializedMap = file_get_contents('/var/www/html/sphpdox/vendor/sphpdox/sphpdox/serializedPackagesMap.txt');
@@ -42,16 +36,23 @@ foreach($packageMap as $packageDir=>$fileRefs) {
         $headingBar .= "#";
     }
     
-    $index = "$headingBar\n";
+    $index .= "$headingBar\n";
     $index .= $packageName . "\n";
     $index .= "$headingBar\n\n";
-    $index .= ".. toctree::\n";
-    $index .= "    :maxdepth: 1\n\n";
+
+    $index .= "Up to :doc:`../index`\n\n";    
+    $index .= ".. toctree::\n\n";
+
+
     
     foreach($namedRefs as $name=>$path) {
         $index .= "   $path\n";
     }
-
+    
+    $index .= ".. toctree::\n";
+    $index .= "   :glob:\n\n";
+    $index .= "   */index\n";
+    
     $path = "/var/www/html/Documentation/source/Reference/packages/$packageDir";
     if(!is_dir($path)) {
         mkdir($path, 0777 ,true);
@@ -60,23 +61,22 @@ foreach($packageMap as $packageDir=>$fileRefs) {
     file_put_contents($path . '/index.rst', $index);
 }
 
-/*
+$packageDirs = array_keys($packageMap);
 
-//PMJ hack for packages. lamely saving a second copy of the same file so the indices
-//are easier to make
-$parser = $this->getParser();
-$package = $parser->getPackage();
-if($package)  {
-    $packagePath = str_replace("\\", "/", $package);
-    $escapedPackage = str_replace("\\", "\\\\", $package);
-    $path = "/var/www/html/Documentation/source/Reference/packages/$packagePath";
-    if(!is_dir($path)) {
-        mkdir($path, 0777 ,true);
-    }
-    $file = $path . '/' . $realPath;
-    file_put_contents($file, $this->__toString());
+sort($packageDirs);
 
-    file_put_contents($path . '/index.rst', $index);
+$topIndex = "";
+
+$topIndex .= "########\n";
+$topIndex .= "Packages\n";
+$topIndex .= "########\n\n";
+
+$topIndex .= ".. toctree::\n";
+$topIndex .= "    :maxdepth: 1\n\n";
+foreach($packageDirs as $dir) {
+    $dir = str_replace("/", "\\\\", $dir);    
+    $topIndex .= "    $dir\n";
+    
 }
 
-*/
+file_put_contents("/var/www/html/Documentation/source/Reference/packages/index.rst", $topIndex);

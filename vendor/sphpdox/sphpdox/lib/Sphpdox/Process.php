@@ -85,6 +85,7 @@ class Process extends Command
 
         //PMJ hack so I don't have to have dirs created in advance
         if(!is_dir($out)) {
+            echo "\n$out\n";
             mkdir($out);
         }
         

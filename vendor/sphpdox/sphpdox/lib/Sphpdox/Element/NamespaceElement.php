@@ -112,11 +112,49 @@ class NamespaceElement extends Element
             $lastTargetPart = $explodedTarget[count($explodedTarget) -1];            
             $class = $element->getPath();
             $classParts = explode('_', $class);
-            
+
             //since the target is system-specific, count backward from then end of the explodedTarget
-            //controllers and helpers 
+            //controllers and helpers
             $etCount = count($explodedTarget);
-    
+            
+            //skip the helpers caught up in the controllers processing
+            if($explodedTarget[$etCount - 1] == 'controllers') {
+            
+                if(isset($classParts[3]) && $classParts[3] == 'Helper') {
+                    continue;
+                } else {
+                    $element->build($target, $output);
+                    continue;
+                }
+            }
+            //controller helpers
+            if($explodedTarget[$etCount - 2] == 'controllers' ) {
+                $element->build($target, $output);
+                continue;
+            
+            }
+            /*
+            if($classParts[0] == 'Omeka' &&
+                            $classParts[1] == 'View' &&
+                            $classParts[2] == 'Helper') {
+                try{
+                    $element->build($target, $output);
+                } catch (Exception $e) {
+                    echo $e;
+                }
+                continue;
+            
+            }
+            */
+            //this works for the models directory
+            if(isset($classParts[count($classParts) -2] )) {
+                $lastClassPart = $classParts[count($classParts) -2];
+                if($lastClassPart != $lastTargetPart) {
+                    //   echo "\n$target\n";
+                    //   print_r($classParts);
+                    continue;
+                }
+            }
             $element->build($target, $output);
             
             //PMJ build the info for package links
