@@ -25,6 +25,18 @@ $packageMap = unserialize($serializedMap);
 foreach($packageMap as $packageDir=>$fileRefs) {
     
     $packageName = str_replace("/", "\\\\", $packageDir);
+    $isFunctionPackage = false;
+    $exploded = explode('\\', $packageName);
+    if(in_array('Function', $exploded)) {
+        $packagePart =  array_pop($exploded);
+        if($packagePart == 'Function') {
+            $packageName = "Global Functions";
+        } else {
+            $packageName = "$packagePart-related functions";
+        }        
+        $isFunctionPackage = true;
+               
+    }
 
     $namedRefs = flatten($fileRefs);
     
@@ -41,7 +53,12 @@ foreach($packageMap as $packageDir=>$fileRefs) {
     $index .= "$headingBar\n\n";
 
     $index .= "Up to :doc:`../index`\n\n";    
-    $index .= ".. toctree::\n\n";
+    $index .= ".. toctree::\n";
+    if($isFunctionPackage) {
+        $index .= "   :maxdepth: 1\n\n";        
+    } else {
+        $index .= "\n\n";
+    }
 
 
     
@@ -50,7 +67,13 @@ foreach($packageMap as $packageDir=>$fileRefs) {
     }
     
     $index .= "\n.. toctree::\n";
-    $index .= "   :glob:\n\n";
+    $index .= "   :glob:\n";
+    if($isFunctionPackage) {
+        $index .= "   :maxdepth: 2\n\n";
+    } else {
+        $index .= "\n\n";
+    }
+    
     $index .= "   */index\n";
     
     $path = "/var/www/html/Documentation/source/Reference/packages/$packageDir";

@@ -130,6 +130,30 @@ class OmekaGlobalsDocumentor {
         $package = $this->getPackage();
         if($package)  {
 
+        
+
+        //PMJ build the info for package links
+        //arrays of package name and references to where in the documentation the
+        //actual file is.
+        //a separate script will need to read the array once all the
+        //documentation has been built and from that build the packages
+        //directory with correct :doc: references back to the file
+        
+        
+        $package = str_replace('\\', '/', $package);
+        echo "\n$package\n";
+        $serializedMap = file_get_contents('/var/www/html/sphpdox/vendor/sphpdox/sphpdox/serializedPackagesMap.txt');
+        
+        $packagesMap = unserialize($serializedMap);        
+        $packagesMap['Function'] = array();
+        $packagesMap[$package][] = array('name' => $functionName,
+                'path' => '/Reference/libraries/globals/' . $functionName
+                );
+        
+        file_put_contents('/var/www/html/sphpdox/vendor/sphpdox/sphpdox/serializedPackagesMap.txt', serialize($packagesMap));
+                    
+        /*
+            
             $packagePath = str_replace("\\", "/", $package);
             $path = "/var/www/html/Documentation/source/Reference/packages/$packagePath";
             if(!is_dir($path)) {
@@ -148,19 +172,7 @@ class OmekaGlobalsDocumentor {
                 $headingBar .= "#";
             }
 
-            
-            $index = "$headingBar\n";
-            $index .= $packageText . "\n";
-            $index .= "$headingBar\n\n";
-            $index .= "Up to :doc:`../index`\n\n";
-            $index .= ".. toctree::\n";
-            $index .= "    :maxdepth: 1\n";
-            $index .= "    :glob:\n\n";
-            $index .= "    */index\n";
-            $index .= "    *\n";
-            
-            file_put_contents($path . '/index.rst', $index);
-            
+            */
         }
     }
 
