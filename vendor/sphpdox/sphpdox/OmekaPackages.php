@@ -49,7 +49,7 @@ foreach($packageMap as $packageDir=>$fileRefs) {
         $index .= "   $path\n";
     }
     
-    $index .= ".. toctree::\n";
+    $index .= "\n.. toctree::\n";
     $index .= "   :glob:\n\n";
     $index .= "   */index\n";
     
@@ -57,7 +57,7 @@ foreach($packageMap as $packageDir=>$fileRefs) {
     if(!is_dir($path)) {
         mkdir($path, 0777 ,true);
     }
-    
+
     file_put_contents($path . '/index.rst', $index);
 }
 
@@ -74,8 +74,8 @@ $topIndex .= "########\n\n";
 $topIndex .= ".. toctree::\n";
 $topIndex .= "    :maxdepth: 1\n\n";
 foreach($packageDirs as $dir) {
-    $dir = str_replace("/", "\\\\", $dir);    
-    $topIndex .= "    $dir\n";
+   // $dir = str_replace("/", "\\\\", $dir);    
+    $topIndex .= "    $dir/index\n";
     
 }
 

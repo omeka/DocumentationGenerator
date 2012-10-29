@@ -73,7 +73,7 @@ dirs=(libraries/Omeka
     controllers/helpers
     controllers
     views/helpers)
-#dirs=(views/helpers)        
+#dirs=(libraries/Omeka)        
 for dir in ${dirs[@]}
 do
     ./sphpdox.php process -o /var/www/html/Documentation/source/Reference/${dir} -t ${dir} no-namespace /var/www/html/Omeka/application/${dir}  

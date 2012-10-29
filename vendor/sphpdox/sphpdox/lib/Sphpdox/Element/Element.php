@@ -47,7 +47,7 @@ abstract class Element
             return '';
         }
 
-        $line = 120; //PMJ changed from original 78
+        $line = 1200; //PMJ changed from original 78
         $spaces = str_pad(' ', $spaces);
 
         if ($rewrap) {
