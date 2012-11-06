@@ -96,8 +96,14 @@ $topIndex .= "########\n\n";
 
 $topIndex .= ".. toctree::\n";
 $topIndex .= "    :maxdepth: 1\n\n";
+$currentTopPackage = '';
 foreach($packageDirs as $dir) {
-   // $dir = str_replace("/", "\\\\", $dir);    
+    $exploded = explode('/', $dir);
+    $topPackage = $exploded[0];
+    if($topPackage == $currentTopPackage) {
+        continue;
+    }
+    $currentTopPackage = $topPackage;
     $topIndex .= "    $dir/index\n";
     
 }

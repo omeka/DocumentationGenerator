@@ -183,6 +183,17 @@ class OmekaGlobalsDocumentor {
             $functionName = '__ (double underscore)';
         }        
         $template = "";
+        
+        //phpdomain collides function ids and header ids
+        //so for globals documnetation put in a hack label
+        //to be different, and we'll just have to remember to use
+        //:ref: instead of :php:func for globals in documentation
+        
+        $label = "f" . str_replace('_', '', $functionName);
+        
+        $template .= ".. _$label:\n\n";
+        
+        
         $functionNameLength = strlen($functionName);
         $headingBar = "";
         for($i = 0; $i < $functionNameLength; $i++) {
