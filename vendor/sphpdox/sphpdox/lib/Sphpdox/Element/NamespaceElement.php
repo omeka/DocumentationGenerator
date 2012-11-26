@@ -138,19 +138,7 @@ class NamespaceElement extends Element
                 continue;
             
             }
-            /*
-            if($classParts[0] == 'Omeka' &&
-                            $classParts[1] == 'View' &&
-                            $classParts[2] == 'Helper') {
-                try{
-                    $element->build($target, $output);
-                } catch (Exception $e) {
-                    echo $e;
-                }
-                continue;
-            
-            }
-            */
+           
             //this works for the models directory
             if(isset($classParts[count($classParts) -2] )) {
                 $lastClassPart = $classParts[count($classParts) -2];
