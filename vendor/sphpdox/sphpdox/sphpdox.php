@@ -1,8 +1,8 @@
 #!/usr/bin/env php
 <?php
 
-if (is_readable('/var/www/html/sphpdox/vendor/autoload.php')) {
-    require '/var/www/html/sphpdox/vendor/autoload.php';
+if (is_readable('/var/www/DocumentationGenerator/vendor/autoload.php')) {
+    require '/var/www/DocumentationGenerator/vendor/autoload.php';
 
 }
 

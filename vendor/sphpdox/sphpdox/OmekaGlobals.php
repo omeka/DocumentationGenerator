@@ -8,11 +8,11 @@
  */
 
 error_reporting(~E_ALL);
-define('PATH_TO_OMEKA_GLOBALS', '/var/www/html/Omeka/application/libraries/globals.php' );
-define('PATH_TO_SPHDOX', '/var/www/html/sphpdox/' );
-define('PATH_TO_DOCUMENTATION_GLOBALS', "/var/www/html/Documentation/source/Reference/libraries/globals/");
+define('PATH_TO_OMEKA_GLOBALS', '/var/www/Omeka/application/libraries/globals.php' );
+define('PATH_TO_SPHDOX', '/var/www/DocumentationGenerator/' );
+define('PATH_TO_DOCUMENTATION_GLOBALS', "/var/www/Documentation/source/Reference/libraries/globals/");
 
-require_once '/var/www/html/Omeka/bootstrap.php';
+require_once '/var/www/Omeka/bootstrap.php';
 require_once(PATH_TO_OMEKA_GLOBALS);
 require_once(PATH_TO_SPHDOX . '/vendor/sphpdox/sphpdox/lib/Sphpdox/CommentParser.php');
 require_once(PATH_TO_SPHDOX . '/vendor/sphpdox/sphpdox/lib/Sphpdox/Element/Element.php');

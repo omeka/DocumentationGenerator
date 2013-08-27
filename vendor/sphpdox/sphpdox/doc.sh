@@ -9,7 +9,7 @@
 ########
 
 # reset the serializedPackagesMap file
-echo "" > 'serializedPackagesMap.txt'
+echo "a:0:{}" > 'serializedPackagesMap.txt'
 
 dirs=(libraries/Omeka
     libraries/Omeka/Storage
@@ -73,13 +73,13 @@ dirs=(libraries/Omeka
     controllers/helpers
     controllers
     views/helpers)
-#dirs=(libraries/Omeka)        
+#dirs=(views/helpers)        
 for dir in ${dirs[@]}
 do
-    ./sphpdox.php process -o /var/www/html/Documentation/source/Reference/${dir} -t ${dir} no-namespace /var/www/html/Omeka/application/${dir}  
+    ./sphpdox.php process -o /var/www/Documentation/source/Reference/${dir} -t ${dir} no-namespace /var/www/Omeka/application/${dir}  
 done
 
 
-#php OmekaGlobals.php
-
+php OmekaGlobals.php
+php OmekaPackages.php
 
