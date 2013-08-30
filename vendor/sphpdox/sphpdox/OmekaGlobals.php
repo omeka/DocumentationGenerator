@@ -141,7 +141,7 @@ class OmekaGlobalsDocumentor {
         
         
         $package = str_replace('\\', '/', $package);
-        echo "\n$package\n";
+        //echo "\n$package\n";
         $serializedMap = file_get_contents('/var/www/html/sphpdox/vendor/sphpdox/sphpdox/serializedPackagesMap.txt');
         
         $packagesMap = unserialize($serializedMap);        
@@ -295,7 +295,7 @@ $globals = $allFunctions['user'];
 //$globals = array('fire_plugin_hook');
 $functions = '';
 foreach($globals as $function) {
-   echo "$function\n";
+   //echo "$function\n";
    $functions .= "$function\n";
    //file_put_contents('functions.txt', $functions);
    $fcn = new OmekaGlobalsDocumentor($function);

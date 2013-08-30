@@ -71,7 +71,9 @@ class MethodElement extends Element
             $string .= '$' . $name;
 
             if (isset($parameter['default'])) {
-                $string .= ' = ' . $parameter['default'];
+                if(!is_array($parameter['default'])) {
+                    $string .= ' = ' . $parameter['default'];
+                }
             }
 
             $strings[] = $string;
@@ -143,7 +145,6 @@ class MethodElement extends Element
     public function __toString()
     {
         $string = sprintf(".. php:method:: %s(%s)\n\n", $this->reflection->getName(), $this->getArguments());
-
         $parser = $this->getParser();
 
         if ($description = $parser->getDescription()) {

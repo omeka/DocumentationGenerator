@@ -61,7 +61,7 @@ dirs=(libraries/Omeka
     libraries/Omeka/Filter
     libraries/Omeka/Session
     libraries/Omeka/Session/SaveHandler
-    models/Installer
+	models/Api
     models/Builder
     models/Installer/Task
     models/Installer
@@ -70,6 +70,7 @@ dirs=(libraries/Omeka
     models/Job
     models/Table
     models
+	controllers/api
     controllers/helpers
     controllers
     views/helpers)
