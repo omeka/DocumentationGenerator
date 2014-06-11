@@ -2,7 +2,7 @@
 <?php
 //require __DIR__ . '/vendor/autoload.php';
 require '/var/www/DocumentationGenerator/vendor/autoload.php';
-
+define('SPHPDOX_DIR', '/var/www/DocumentationGenerator/vendor/sphpdox/sphpdox/');
 use Sphpdox\Process;
 use Symfony\Component\Console\Shell;
 use Symfony\Component\Console\Application;

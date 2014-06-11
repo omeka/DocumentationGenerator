@@ -107,7 +107,7 @@ class NamespaceElement extends Element
         $target = $this->ensureBuildDir($basedir, $output);
         
         
-        $serializedMap = file_get_contents('/var/www/DocumentationGenerator/vendor/sphpdox/sphpdox/serializedPackagesMap.txt');
+        $serializedMap = file_get_contents(SPHPDOX_DIR . 'serializedPackagesMap.txt');
         $packagesMap = unserialize($serializedMap);
         if(!is_array($packagesMap)) {
             $packagesMap = array();
