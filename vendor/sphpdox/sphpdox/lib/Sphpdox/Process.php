@@ -28,6 +28,7 @@ class Process extends Command
         $definition->addOption(new InputOption('output', 'o', InputOption::VALUE_REQUIRED, 'The path to output the ReST files', 'build'));
         $definition->addOption(new InputOption('title', 't', InputOption::VALUE_REQUIRED, 'An alternate title for the top level namespace', null));
         $definition->addOption(new InputOption('exclude', 'x', InputOption::VALUE_REQUIRED, 'Semicolon separated namespaces to ignore', null));
+        $definition->addOption(new InputOption('filters', 'f', InputOption::VALUE_REQUIRED, 'Semicolon separated filename filters to apply', null));
 
         $this
             ->setName('process')
@@ -82,13 +83,11 @@ class Process extends Command
         if ($out == 'build' && !file_exists($out)) {
             mkdir($out);
         }
-
-        //PMJ hack so I don't have to have dirs created in advance
+            //PMJ hack so I don't have to have dirs created in advance
         if(!is_dir($out)) {
             echo "\n$out\n";
             mkdir($out);
         }
-        
         if (!is_writable($out)) {
             $o = $this->getHelper('dialog')->askAndValidate(
                 $output,
@@ -119,23 +118,31 @@ class Process extends Command
 
         $output_files = array();
 
+        $filters = array();
+        if (($filtersArgument = trim($input->getOption('filters')))) {
+            $filters = explode(';', $filtersArgument);
+            foreach ($filters as $filter) {
+                $output->writeln(sprintf('<comment>Applying filter %s</comment>', $filter));
+            }
+        }
+        
         $broker = new Broker($backend = new Memory());
-        $broker->processDirectory($path);
+        $broker->processDirectory($path, $filters);
 
         $namespaces = $backend->getNamespaces();
         ksort($namespaces);
 
         $excludes = array();
-        if ($input->hasOption('exclude')) {
-//            $excludes = explode(';', $input->getOption('exclude'));
+        if (($exclude = trim($input->getOption('exclude')))) {
+            $excludes = explode(';', $exclude);
             foreach ($excludes as $exclude) {
                 $output->writeln(sprintf('<comment>Excluding code from %s</comment>', $exclude));
             }
         }
 
-        foreach ($namespaces as $n => $reflection)
-        {
+        $filtered = array();
 
+        foreach ($namespaces as $n => $reflection) {
             if (substr($n, 0, strlen($namespace)) != $namespace) continue;
 
             foreach ($excludes as $exclude) {
@@ -144,7 +151,25 @@ class Process extends Command
                 }
             }
 
+            $filtered[$n] = $reflection;
+        }
+
+        unset($namespaces);
+        $elements = array();
+
+        foreach ($filtered as $n => $reflection) {
             $output->writeln(sprintf('<info>Processing %s</info>', $n));
+
+            $element = new NamespaceElement($reflection);
+            $element->buildClasses($out, $output);
+
+            $elements[$n] = $element;
+        }
+
+        unset($filtered);
+
+        foreach ($elements as $n => $element) {
+            $output->writeln(sprintf('<info>Building index for %s</info>', $n));
 
             $options = array();
 
@@ -152,8 +177,7 @@ class Process extends Command
                 $options = array('title' => $input->getOption('title'));
             }
 
-            $element = new NamespaceElement($reflection);
-            $element->build($out, $output, $options);
+            $element->buildIndex($out, $output, $options);
         }
     }
 }

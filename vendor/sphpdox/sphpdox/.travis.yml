@@ -1,0 +1,16 @@
+language: php
+
+before_script:
+  - composer install
+
+php:
+  - 5.3
+  - 5.4
+
+branches:
+  only:
+    - master
+
+notifications:
+  email:
+    - dominic@varspool.com

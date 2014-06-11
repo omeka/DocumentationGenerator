@@ -23,13 +23,11 @@ class NamespaceElement extends Element
     public function getPath()
     {
         //PMJ hack: ignore 'no-namespace'
-
         $name = $this->reflection->getName();
         
         if($name == 'no-namespace') {
             $name = '';
-        }
-        
+        }        
         return str_replace('\\', DIRECTORY_SEPARATOR, $name);
     }
 
@@ -51,8 +49,7 @@ class NamespaceElement extends Element
 
 
     protected function getClasses()
-    {       
-
+    {
         return array_map(function ($v) {
             return new ClassElement($v);
         }, $this->reflection->getClasses());
@@ -75,15 +72,15 @@ class NamespaceElement extends Element
     }
 
     /**
-     * @param string $basedir
+     * Ensures the build directory is in place
+     *
+     * @param string $path
      * @param OutputInterface $output
+     * @return string The directory
      */
-    public function build($basedir, OutputInterface $output, array $options = array())
+    protected function ensureBuildDir($path, OutputInterface $output)
     {
-        $path = $basedir;
         $parts = explode(DIRECTORY_SEPARATOR, $this->getPath());
-
-        $target = $basedir . DIRECTORY_SEPARATOR . $this->getPath();
 
         foreach ($parts as $part) {
             if (!$part) continue;
@@ -95,6 +92,21 @@ class NamespaceElement extends Element
                 mkdir($path);
             }
         }
+
+        return $path;
+    }
+
+    /**
+     * Builds the class information
+     *
+     * @param unknown $basedir
+     * @param OutputInterface $output
+     */
+    public function buildClasses($basedir, OutputInterface $output)
+    {
+        $target = $this->ensureBuildDir($basedir, $output);
+        
+        
         $serializedMap = file_get_contents('/var/www/DocumentationGenerator/vendor/sphpdox/sphpdox/serializedPackagesMap.txt');
         $packagesMap = unserialize($serializedMap);
         if(!is_array($packagesMap)) {
@@ -105,48 +117,19 @@ class NamespaceElement extends Element
             //Same with Controller/ActionHelper
             $packagesMap['Controller/ActionHelper'] = array();
         }
-        foreach ($this->getClasses() as $element) { 
-            //PMJ hackery
-            //the classes for some reason include both the classes in the directory, and the classes below
-            //this uses the name of the directory we're processing and the class name
-            //to skip the classes from the subdirectory
-            
+        foreach ($this->getClasses() as $element) {
+            //new PMJ hackery
             $explodedTarget = explode('/', trim($target, '/'));
-            $lastTargetPart = $explodedTarget[count($explodedTarget) -1];            
-            $class = $element->getPath();
-            $classParts = explode('_', $class);
-
-            //since the target is system-specific, count backward from then end of the explodedTarget
-            //controllers and helpers
-            $etCount = count($explodedTarget);
-            //skip the helpers caught up in the controllers processing
-            if($explodedTarget[$etCount - 1] == 'controllers') {
-            
-                if(isset($classParts[3]) && $classParts[3] == 'Helper') {
-                    continue;
-                } else {
-                    $element->build($target, $output);
-                    continue;
-                }
-            }
-            //controller helpers
-            if($explodedTarget[$etCount - 2] == 'controllers' ) {
-                $element->build($target, $output);
+            $className = $element->getReflection()->getName();
+            $explodedClassName = explode('_', $className);
+            $penultimateClassNameIndex = count($explodedClassName) -2; 
+            $penultimateTargetIndex = count($explodedTarget) -1;
+            if ($explodedClassName[$penultimateClassNameIndex] != $explodedTarget[$penultimateTargetIndex])
+            {
+                $output->writeln('skip this level ' . $target);
                 continue;
-            
             }
-            
-            //this works for the models directory
-            if(isset($classParts[count($classParts) -2] )) {
-                $lastClassPart = $classParts[count($classParts) -2];
-                if($lastClassPart != $lastTargetPart) {
-                    //catch view Helpers
-                    if($classParts[1] == 'View' && $classParts[2] == 'Helper') {
-                        $element->build($target, $output);
-                    }
-                    continue;
-                }
-            }
+
             $element->build($target, $output);
             
             //PMJ build the info for package links
@@ -155,6 +138,8 @@ class NamespaceElement extends Element
             //a separate script will need to read the array once all the 
             //documentation has been built and from that build the packages
             //directory with correct :doc: references back to the file
+            
+            /*
             $package = $element->getPackage();
             $package = str_replace('\\', '/', $package);
             
@@ -162,12 +147,20 @@ class NamespaceElement extends Element
                                               'path' => str_replace('/var/www/Documentation/source', '',  $element->file)
                                               );
             file_put_contents('/var/www/DocumentationGenerator/vendor/sphpdox/sphpdox/serializedPackagesMap.txt', serialize($packagesMap));
+            */
+            
             
         }
+    }
 
-        
+    /**
+     * Builds the index file
+     */
+    public function buildIndex($basedir, OutputInterface $output, array $options = array())
+    {
+        $target = $this->ensureBuildDir($basedir, $output);
+
         $built_iterator = new DirectoryIterator($target);
-
         $index = $target . DIRECTORY_SEPARATOR . 'index.rst';
 
         $title = str_replace('\\', '\\\\', $this->reflection->getName());
@@ -176,57 +169,36 @@ class NamespaceElement extends Element
         }
 
         $depth = substr_count($this->reflection->getName(), '\\');
-        
-        $template = str_repeat($this->titles[$depth], strlen($title)) . "\n";
-        
-        if($title == 'no-namespace') {
-            $template .= "Omeka \n";//PMJ hack to not show 'no-namespace' 
-        } else {
-            $template .= ucfirst($title) . "\n"; //PMJ hack use the directory passed in to doc.sh
-        }
-        
-        $template .= str_repeat($this->titles[$depth], strlen($title)) . "\n\n";
-        $template .= ".. toctree::\n\n";
-        $files = array();
-        foreach($built_iterator as $file) {
-            $files[$file->getBaseName()] = $file;
-        }
-        ksort($files);
-        $subDirectoriesTemplate = "\n\n.. toctree::\n\n";
-        foreach ($files as $name=>$file) {
 
-/* commenting out original code
+        $template = str_repeat($this->titles[$depth], strlen($title)) . "\n";
+        $template .= $title . "\n";
+        $template .= str_repeat($this->titles[$depth], strlen($title)) . "\n\n";
+        $template .= $this->getNamespaceElement();
+
+        $template .= ".. toctree::\n\n";
+
+        foreach ($built_iterator as $file) {
             if ($file->isDot()) continue;
             if ($file->isFile() && !$file->getExtension() == 'rst') continue;
             if ($file->isFile() && substr($file->getBaseName(), 0, 1) == '.') continue;
             if ($file->getBaseName() == 'index.rst') continue;
-*/
-            //above ifs worked with DirectoryIterator, but to sort, had to drop into an array,
-            //and that apparently borks all those methods
 
-            if($name == '.') continue;
-            if($name == '..') continue;
-            if($name == 'index.rst') continue;
+            $template .= '   ' . pathinfo($file->getPathName(), PATHINFO_FILENAME);
 
-            $exploded = explode('.', $name);
-
-            //index.rst is only autogenerated at the top level, so I'll drop the subdirectories to the end
-            //and write the index.rst myself. Since it isn't autogenerated, it won't get clobbered on 
-            //updates, but new files and classes will have to be added manually.
-            
-            if(isset($exploded[1])) {
-                //it's .rst
-                $template .= "    {$exploded[0]}\n";
-            } else {
-
-                //it's a directory, so keep track of it to drop it in at the end
-                $subDirectoriesTemplate .= "    {$exploded[0]}/index\n";                
+            if ($file->isDir()) {
+                $template .= '/index';
             }
-            
-                        
+
+            $template .= "\n";
         }
-        
-        $template .= $subDirectoriesTemplate;
+
         file_put_contents($index, $template);
+    }
+
+    public function getNamespaceElement()
+    {
+        return '.. php:namespace: '
+            . str_replace('\\', '\\\\', $this->reflection->getName())
+            . "\n\n";
     }
 }

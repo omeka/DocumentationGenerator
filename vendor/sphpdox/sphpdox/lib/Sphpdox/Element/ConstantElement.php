@@ -2,16 +2,15 @@
 
 namespace Sphpdox\Element;
 
+use TokenReflection\IReflectionConstant;
 use Symfony\Component\Console\Output\OutputInterface;
-use TokenReflection\ReflectionConstant;
 
 /**
  * Constant element
  */
 class ConstantElement extends Element
 {
-    //PMJ commented out the ReflectionConstant class name b/c sometimes PHP/ReflectionConstant got passed in
-    public function __construct($constant)
+    public function __construct(IReflectionConstant $constant)
     {
         $this->reflection = $constant;
     }

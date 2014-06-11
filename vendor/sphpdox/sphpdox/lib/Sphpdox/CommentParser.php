@@ -8,9 +8,19 @@ class CommentParser
     protected $shortDescription;
     protected $longDescription = null;
     protected $annotations = array();
-    protected $package;
 
     /**
+     * A separately indexed array of annotations by name, for ease of use
+     *
+     * The @suffix is also removed
+     *
+     * @var array<string => array<string>>
+     */
+    protected $annotationsByName = array();
+
+    /**
+     * Constructor
+     *
      * @param string $docblock
      */
     public function __construct($comment)
@@ -19,13 +29,16 @@ class CommentParser
         $this->parse();
     }
 
+    /**
+     * Parses the docblock
+     */
     protected function parse()
     {
         $content = $this->comment;
 
         // Rewrite newlines
         $content = preg_replace('/\r\n/', "\n", $content);
-        
+
         // Rewrite tabs
         $content = preg_replace('/\t/', '    ', $content);
 
@@ -43,10 +56,24 @@ class CommentParser
         $this->split($content);
     }
 
-    
-    
+    protected function addAnnotation($annotation)
+    {
+        if ($annotation) {
+            if (preg_match('/@(\w+)/', $annotation, $matches)) {
+                $this->annotationsByName[$matches[1]][] = $annotation;
+            }
+            $this->annotations[] = $annotation;
+        }
+    }
+
+    /**
+     * Splits the simplified comment string into parts (annotations plus
+     *     descriptions)
+     *
+     * @param string $content
+     */
     protected function split($content)
-    {      
+    {
         // Pull off all annotation lines
         $continuation = false;
         $annotation = '';
@@ -54,33 +81,14 @@ class CommentParser
         $lines = explode("\n", $content);
         $remaining = $lines;
 
-        //PMJ
-        $keepFormatting = false;
-
         foreach ($lines as $i => $line) {
             if (!$line) {
                 $continuation = false;
                 continue;
-            }          
-            if($line == '<code>') {
-                $keepFormatting = true;
-                $line = "\n\n    .. code-block:: php \n\n";
             }
-            if($line == "<ul>" || $line == "<ol>") {
-                $keepFormatting = true;
-                $tag = $line;
-                $line = "\n\n    .. raw:: html\n\n       $line";                
-            }            
-            
-            if(substr($line, 0, 15) == '@package Omeka\\') {
-                
-                $this->package = substr($line, 15);
-            }
-            
+
             if ($line[0] == '@') {
-                if ($annotation) {
-                    $this->annotations[] = $annotation;
-                }
+                $this->addAnnotation($annotation);
                 $annotation = '';
                 $continuation = true;
             } elseif ($continuation) {
@@ -88,31 +96,16 @@ class CommentParser
             } else {
                 continue;
             }
-            if($keepFormatting) {
-                if($line == '</code>') {
-                    $keepFormatting = false;
-                } else if ($line == "</ul>" || $line == "</ol>") {
-                    $annotation .= "        $line\n";
-                    $keepFormatting = false;
-                } else {
-                    $annotation .= "        $line\n";
-                }
-                
-            } else {
-                $annotation .= trim($line);
-            }
 
+            $annotation .= trim($line);
             unset($remaining[$i]);
         }
 
-        if ($annotation) {
-            $this->annotations[] = $annotation;     
-        }
+        $this->addAnnotation($annotation);
 
         // Split remaining lines by paragrah
         $remaining = implode("\n", $remaining);
         $parts = preg_split("/(\n\n|\r\n\r\n)/", $remaining, -1, PREG_SPLIT_NO_EMPTY);
-        //$parts = preg_split("/(\n\n|\r\n\r\n)/", $remaining);
 
         // Into two parts
         if ($parts) {
@@ -120,16 +113,6 @@ class CommentParser
             $this->shortDescription = trim($first);
 
             $rest = array_slice($parts, 1);
-
-            foreach($rest as $i=>$line) {
-                $lines = explode("\n", $line);
-                
-                if(count($lines) > 2) {
-                    
-                    $rest[$i] = $this->linesToText($lines);
-                }
-            }
-
             if ($rest) {
                 $long = implode("\n\n", $rest);
                 $long = preg_replace('/(\w) *\n *(\w)/', '\1 \2', $long);
@@ -139,81 +122,97 @@ class CommentParser
         }
     }
 
-    
     /**
-     * PMJ added to work the code and html seeking stuff into general use
-     * duplicates, sadly, much of above
+     * Gets all the annotations on the method
+     *
+     * @return array
      */
-    protected function linesToText($lines)
-    {
-        $text = '';
-        $keepFormatting = false;
-        foreach ($lines as $line) {
-            if($line == '<code>') {
-                $keepFormatting = true;
-                $line = "\n\n    .. code-block:: php \n\n";
-            }
-            if($line == "<ul>" || $line == "<ol>") {
-                $keepFormatting = true;
-                $tag = $line;
-                $line = "\n\n    .. raw:: html\n\n       $line";        
-            }
-                   
-            if($keepFormatting) {
-                if($line == '</code>') {
-                    $keepFormatting = false;
-                } else if ($line == "</ul>" || $line == "</ol>") {
-                    $text .= "\t                $line\n";
-                    $keepFormatting = false;
-                } else {
-                    $text .= "\t               $line\n";
-                }       
-            } else if(substr($line, 0, 1) == '-') {
-                $line = "\n\n$line";
-                $text .= $line;
-            } else {
-                $text .= trim($line);
-            }        
-
-        }
-        return $text;        
-    }
-
     public function getAnnotations()
     {
         return $this->annotations;
     }
 
+    /**
+     * Gets all annotations of the specified name, if there are any
+     *
+     * @param string $name
+     * @return array<string>
+     */
+    public function getAnnotationsByName($name)
+    {
+        if (isset($this->annotationsByName[$name])) {
+            return $this->annotationsByName[$name];
+        }
+        return array();
+    }
+
+    /**
+     * Whether the comment has at least one annotation of the given name
+     *
+     * @param string $name
+     * @return boolean
+     */
+    public function hasAnnotation($name)
+    {
+        return !empty($this->annotationsByName[$name]);
+    }
+
+    /**
+     * Gets the short and long description in the comment
+     *
+     * The full comment if you like. If this docblock were processed,
+     * the former paragraph and this one would be returned.
+     *
+     * @return string
+     */
     public function getDescription()
     {
         $description = $this->getShortDescription();
         if ($this->hasLongDescription()) {
-            $description .= "\n\n" . $this->getLongDescription();            
-        }        
+            $description .= "\n\n" . $this->getLongDescription();
+        }
         return $description;
     }
 
+    /**
+     * Gets the short description in the comment
+     *
+     * That's just the first paragraph
+     *
+     * @return string
+     */
     public function getShortDescription()
     {
         return $this->shortDescription;
     }
 
+    /**
+     * Gets the long description
+     *
+     * Some methods dont have descriptions, in which case this will be null
+     *
+     * @return string|null
+     */
     public function getLongDescription()
     {
         return $this->longDescription;
-         
-    }
-    
-    public function getPackage()
-    {
-        return $this->package;
     }
 
+    /**
+     * Whether the comment has any sort of description, long or short
+     *
+     * @return boolean
+     */
     public function hasDescription()
     {
         return (boolean)$this->shortDescription;
     }
 
+    /**
+     * Whether the comment has a long description
+     *
+     * @return boolean
+     */
     public function hasLongDescription()
     {
         return $this->longDescription != null;

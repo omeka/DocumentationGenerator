@@ -10,11 +10,22 @@ use TokenReflection\IReflectionMethod;
  */
 class MethodElement extends Element
 {
+    /**
+     * Constructor
+     *
+     * @param IReflectionMethod $method
+     */
     public function __construct(IReflectionMethod $method)
     {
-        $this->reflection = $method;
+        parent::__construct($method);
     }
 
+    /**
+     * Gets an array of simplified information about the parameters of this
+     * method
+     *
+     * @return array
+     */
     protected function getParameterInfo()
     {
         $params = array();
@@ -22,12 +33,18 @@ class MethodElement extends Element
         $parameters = $this->reflection->getParameters();
         foreach ($parameters as $parameter) {
             $params[$parameter->getName()] = array(
-                'name' => $parameter->getName(),
-                'type' => $parameter->getOriginalTypeHint(),
+                'name'      => $parameter->getName(),
+                'hint_type' => $parameter->getOriginalTypeHint(),
+                'type'      => $parameter->getOriginalTypeHint(),
+                'comment'   => null
             );
 
             if ($parameter->isDefaultValueAvailable()) {
-                $params[$parameter->getName()]['default'] = $parameter->getDefaultValue();
+                try {
+                    $params[$parameter->getName()]['default'] = trim($parameter->getDefaultValueDefinition());
+                } catch (\Exception\RuntimeException $e) {
+                    // Just don't provide a default
+                }
             }
         }
 
@@ -42,21 +59,28 @@ class MethodElement extends Element
                 continue;
             }
 
-            $type = $parts[1];
-            $name = str_replace('$', '', $parts[2]);
-            $comment = implode(' ', array_slice($parts, 3));
+            $type = trim($parts[1]);
+            $name = trim(str_replace('$', '', $parts[2]));
+            $comment = trim(implode(' ', array_slice($parts, 3)));
 
             if (isset($params[$name])) {
-                if ($params[$name]['type'] == null) {
+                if ($params[$name]['type'] == null && $type) {
                     $params[$name]['type'] = $type;
                 }
-                $params[$name]['comment'] = $comment;
+                if ($comment) {
+                    $params[$name]['comment'] = $comment;
+                }
             }
         }
 
         return $params;
     }
 
+    /**
+     * Gets the formal signature/declaration argument list ReST output
+     *
+     * @return string
+     */
     protected function getArguments()
     {
         $strings = array();
@@ -64,16 +88,17 @@ class MethodElement extends Element
         foreach ($this->getParameterInfo() as $name => $parameter) {
             $string = '';
 
-            if ($parameter['type']) {
-                $string .= $parameter['type'] . ' ';
+            if ($parameter['hint_type']) {
+                $string .= $parameter['hint_type'] . ' ';
             }
 
             $string .= '$' . $name;
 
             if (isset($parameter['default'])) {
-                if(!is_array($parameter['default'])) {
-                    $string .= ' = ' . $parameter['default'];
+                if ($parameter['default'] == '~~NOT RESOLVED~~') {
+                    $parameter['default'] = '';
                 }
+                $string .= ' = ' . $parameter['default'];
             }
 
             $strings[] = $string;
@@ -83,6 +108,8 @@ class MethodElement extends Element
     }
 
     /**
+     * Gets an array of parameter information, in ReST format
+     *
      * @return array
      */
     protected function getParameters()
@@ -90,28 +117,27 @@ class MethodElement extends Element
         $strings = array();
 
         foreach ($this->getParameterInfo() as $name => $parameter) {
-            $string = ':param ';
-
             if ($parameter['type']) {
-                $string .= $parameter['type'];
-            } else {
-                $string .= 'unknown';
+                $strings[] = ':type $' . $name . ': ' . $parameter['type'];
             }
 
-            $string .= ' $';
-            $string .= $name;
-            $string .= ': ';
+            $string = ':param $' . $name . ':';
 
-            if (isset($parameter['comment'])) {
-                $string .= $parameter['comment'];
+            if (isset($parameter['comment']) && $parameter['comment']) {
+                $string .= ' ' . $parameter['comment'];
             }
 
-            $strings[] = $string;
+             $strings[] = $string;
         }
 
         return $strings;
     }
 
+    /**
+     * Gets the return value ReST notation
+     *
+     * @return boolean|string
+     */
     protected function getReturnValue()
     {
         $annotations = array_filter($this->getParser()->getAnnotations(), function ($v) {
@@ -142,9 +168,19 @@ class MethodElement extends Element
         return false;
     }
 
+    /**
+     * @see \Sphpdox\Element\Element::__toString()
+     */
     public function __toString()
     {
+        try {
+            $arguments = $this->getArguments();
+        } catch (\Exception $e) {
+            $arguments = '';
+        }
+
         $string = sprintf(".. php:method:: %s(%s)\n\n", $this->reflection->getName(), $this->getArguments());
+
         $parser = $this->getParser();
 
         if ($description = $parser->getDescription()) {

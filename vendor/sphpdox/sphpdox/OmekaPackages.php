@@ -10,6 +10,8 @@
  * 
  */
 
+define('SPHPDOX_DIR', '/var/www/DocumentationGenerator/vendor/sphpdox/sphpdox/' );
+define('DOC_REF_DIR', "/var/www/Documentation/source/Reference/");
 
 function flatten($fileRefs) {
     $flattened = array();
@@ -20,7 +22,7 @@ function flatten($fileRefs) {
     return $flattened;    
 }
 
-$serializedMap = file_get_contents('/var/www/DocumentationGenerator/vendor/sphpdox/sphpdox/serializedPackagesMap.txt');
+$serializedMap = file_get_contents(SPHPDOX_DIR .'serializedPackagesMap.txt');
 $packageMap = unserialize($serializedMap);
 foreach($packageMap as $packageDir=>$fileRefs) {
     $packageName = str_replace("/", "\\\\", $packageDir);
@@ -74,7 +76,7 @@ foreach($packageMap as $packageDir=>$fileRefs) {
     
     $index .= "   */index\n";
     
-    $path = "/var/www/Documentation/source/Reference/packages/$packageDir";
+    $path = DOC_REF_DIR . "packages/$packageDir";
     if(!is_dir($path)) {
         mkdir($path, 0777 ,true);
     }
@@ -105,4 +107,4 @@ foreach($packageDirs as $dir) {
     
 }
 
-file_put_contents("/var/www/Documentation/source/Reference/packages/index.rst", $topIndex);
+file_put_contents(DOC_REF_DIR . "/packages/index.rst", $topIndex);

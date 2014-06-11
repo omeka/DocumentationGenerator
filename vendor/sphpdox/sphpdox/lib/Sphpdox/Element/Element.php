@@ -23,6 +23,10 @@ abstract class Element
         $this->reflection = $reflection;
     }
 
+    public function getReflection()
+    {
+        return $this->reflection;
+    }
     /**
      */
     protected function getParser()
@@ -47,7 +51,7 @@ abstract class Element
             return '';
         }
 
-        $line = 1200; //PMJ changed from original 78
+        $line = 78;
         $spaces = str_pad(' ', $spaces);
 
         if ($rewrap) {
@@ -60,6 +64,7 @@ abstract class Element
         }
 
         $output = preg_replace('/^/m', $spaces, $output);
+
         return $output;
     }
 }

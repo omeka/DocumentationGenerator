@@ -84,7 +84,7 @@ class ArgvInput extends Input
                 $parseOptions = false;
             } elseif ($parseOptions && 0 === strpos($token, '--')) {
                 $this->parseLongOption($token);
-            } elseif ($parseOptions && '-' === $token[0]) {
+            } elseif ($parseOptions && '-' === $token[0] && '-' !== $token) {
                 $this->parseShortOption($token);
             } else {
                 $this->parseArgument($token);
@@ -278,7 +278,7 @@ class ArgvInput extends Input
      *
      * @param string|array $values The value(s) to look for in the raw parameters (can be an array)
      *
-     * @return Boolean true if the value is contained in the raw parameters
+     * @return bool    true if the value is contained in the raw parameters
      */
     public function hasParameterOption($values)
     {
