@@ -1,8 +1,9 @@
 #!/usr/bin/env php
 <?php
-//require __DIR__ . '/vendor/autoload.php';
-require '/var/www/DocumentationGenerator/vendor/autoload.php';
-define('SPHPDOX_DIR', '/var/www/DocumentationGenerator/vendor/sphpdox/sphpdox/');
+$path = realpath(__DIR__ . '/../../..');
+define('DOCGENERATOR_DIR', $path );
+define('SPHPDOX_DIR', __DIR__);
+require DOCGENERATOR_DIR . '/vendor/autoload.php';
 use Sphpdox\Process;
 use Symfony\Component\Console\Shell;
 use Symfony\Component\Console\Application;

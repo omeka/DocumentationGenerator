@@ -173,7 +173,8 @@ class NamespaceElement extends Element
         $template = str_repeat($this->titles[$depth], strlen($title)) . "\n";
         $template .= $title . "\n";
         $template .= str_repeat($this->titles[$depth], strlen($title)) . "\n\n";
-        $template .= $this->getNamespaceElement();
+        //PMJ remove the namespace because it is 'no-namespace'
+        //$template .= $this->getNamespaceElement();
 
         $template .= ".. toctree::\n\n";
 
