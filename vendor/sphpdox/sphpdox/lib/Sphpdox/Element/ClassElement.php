@@ -57,7 +57,26 @@ class ClassElement extends Element
         $string .= $title . "\n";
         $string .= str_repeat('-', strlen($title)) . "\n\n";
         //$string .= $this->getNamespaceElement();
-        $string .= '.. php:class:: ' . $this->reflection->getShortName();
+        //PMJ check if interface
+        if ($this->reflection->isInterface()) {
+            $string .= '.. php:interface:: ' . $this->reflection->getShortName();
+        } else {
+            $string .= '.. php:class:: ' . $this->reflection->getShortName();    
+        }
+        $parent = $this->reflection->getParentClassName();
+        if ($parent) {
+            $string .= "\n\n";
+            $string .= "extends :php:class:`$parent`"; 
+        }
+        
+        $implements = $this->reflection->getInterfaceNames();
+        if (! empty($implements)) {
+            $string .= "\n";
+            foreach ($implements as $interface) {
+                $string .= "\nimplements :php:interface:`$interface`";
+            }
+        }
+        
 
         $parser = $this->getParser();
 
