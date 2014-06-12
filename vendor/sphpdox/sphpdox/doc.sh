@@ -78,16 +78,15 @@ dirs=(
     models/Mixin
     models/Output
     models/Table
-    controllers/
+    controllers
 	controllers/api
     controllers/helpers
-    controllers
     views
     views/helpers)
-#dirs=(    libraries/Omeka/Controller
-#    libraries/Omeka/Controller/Plugin
-#    libraries/Omeka/Controller/Exception
-#    libraries/Omeka/Controller/Router
+#dirs=(    
+#    controllers
+#	controllers/api
+#    controllers/helpers
 #)        
 for dir in ${dirs[@]}
 do

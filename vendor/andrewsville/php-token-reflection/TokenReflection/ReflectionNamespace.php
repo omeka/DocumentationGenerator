@@ -427,6 +427,8 @@ class ReflectionNamespace implements IReflectionNamespace
 			}
 
 			if (isset($this->classes[$className])) {
+			    //PMJ hack because we have controllers with same class name in different directories
+			    continue;
 				if (!$this->classes[$className] instanceof Invalid\ReflectionClass) {
 					$this->classes[$className] = new Invalid\ReflectionClass($className, $this->classes[$className]->getFileName(), $this->getBroker());
 				}
@@ -448,7 +450,7 @@ class ReflectionNamespace implements IReflectionNamespace
 				$this->classes[$className] = $reflection;
 			}
 		}
-
+        //$this->classes[$className] = $reflection;
 		foreach ($namespace->getFunctions() as $functionName => $reflection) {
 			if ($reflection instanceof Invalid\ReflectionFunction) {
 				$errors = array_merge($errors, $reflection->getReasons());

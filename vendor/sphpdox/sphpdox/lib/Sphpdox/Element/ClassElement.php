@@ -56,7 +56,7 @@ class ClassElement extends Element
         $string = str_repeat('-', strlen($title)) . "\n";
         $string .= $title . "\n";
         $string .= str_repeat('-', strlen($title)) . "\n\n";
-        $string .= $this->getNamespaceElement();
+        //$string .= $this->getNamespaceElement();
         $string .= '.. php:class:: ' . $this->reflection->getShortName();
 
         $parser = $this->getParser();

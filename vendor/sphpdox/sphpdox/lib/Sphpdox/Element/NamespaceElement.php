@@ -117,6 +117,7 @@ class NamespaceElement extends Element
             //Same with Controller/ActionHelper
             $packagesMap['Controller/ActionHelper'] = array();
         }
+        
         foreach ($this->getClasses() as $element) {
             //new PMJ hackery
             $explodedTarget = explode('/', trim($target, '/'));
@@ -124,12 +125,23 @@ class NamespaceElement extends Element
             $explodedClassName = explode('_', $className);
             $penultimateClassNameIndex = count($explodedClassName) -2; 
             $penultimateTargetIndex = count($explodedTarget) -1;
-            if ($explodedClassName[$penultimateClassNameIndex] != $explodedTarget[$penultimateTargetIndex])
-            {
-                $output->writeln('skip this level ' . $target);
-                continue;
+            
+            $classNameMatch = strtolower($explodedClassName[$penultimateClassNameIndex]);
+            $targetMatch = strtolower($explodedTarget[$penultimateTargetIndex]);
+            $targetMatches = array($targetMatch, trim($targetMatch, 's'));
+            //to get the right tree structure for /libraries/Omeka/
+            
+            if(empty($classNameMatch)) {
+                //let controllers directory get processed
+                
+            } else {
+                if ( ! in_array($classNameMatch, $targetMatches) )
+                {
+                    $output->writeln('skip this level ' . $target);
+                    continue;
+                }
             }
-
+            
             $element->build($target, $output);
             
             //PMJ build the info for package links
