@@ -7,30 +7,44 @@
  * 
  */
 
-error_reporting(~E_ALL);
+error_reporting(E_ALL);
+$path = realpath(__DIR__ . '/../../..');
+define('DOCGENERATOR_DIR', $path );
+define('SPHPDOX_DIR', __DIR__);
 define('PATH_TO_OMEKA_GLOBALS', '/var/www/Omeka/application/libraries/globals.php' );
-define('PATH_TO_SPHDOX', '/var/www/DocumentationGenerator/' );
 define('PATH_TO_DOCUMENTATION_GLOBALS', "/var/www/Documentation/source/Reference/libraries/globals/");
 
-require_once '/var/www/Omeka/bootstrap.php';
+//require_once '/var/www/Omeka/bootstrap.php';
 require_once(PATH_TO_OMEKA_GLOBALS);
-require_once(PATH_TO_SPHDOX . '/vendor/sphpdox/sphpdox/lib/Sphpdox/CommentParser.php');
-require_once(PATH_TO_SPHDOX . '/vendor/sphpdox/sphpdox/lib/Sphpdox/Element/Element.php');
-require_once(PATH_TO_SPHDOX . '/vendor/sphpdox/sphpdox/lib/Sphpdox/Element/MethodElement.php');
+require_once(DOCGENERATOR_DIR . '/vendor/sphpdox/sphpdox/lib/Sphpdox/CommentParser.php');
+require_once(DOCGENERATOR_DIR . '/vendor/sphpdox/sphpdox/lib/Sphpdox/Element/Element.php');
+require_once(DOCGENERATOR_DIR . '/vendor/sphpdox/sphpdox/lib/Sphpdox/Element/MethodElement.php');
 
 class FunctionElement extends Sphpdox\Element\MethodElement
 {
     public $package = null;
+    public $annotations = null;
     
     public function __construct($functionReflection)
     {
         $this->reflection = $functionReflection;
-        $this->package = $this->getParser()->getPackage();
+        $this->annotations = $this->getParser()->getAnnotations();
     }
     
     public function getPackage()
     {
-        return $this->package;
+        $packageAnnotations = array_filter($this->annotations, function ($v) {
+            $e = explode(' ', $v);
+            return isset($e[0]) && $e[0] == '@package';
+        });
+        if (empty($packageAnnotations)) {
+            return '';
+        } else {
+            $packageAnnotation = $packageAnnotations[0];
+            $exploded = explode(' ', $packageAnnotation);
+            return $exploded[1];            
+        }
+
     }
     
     protected function getParameterInfo()
@@ -38,23 +52,22 @@ class FunctionElement extends Sphpdox\Element\MethodElement
         $params = array();
     
         $parameters = $this->reflection->getParameters();
+        
         foreach ($parameters as $parameter) {
             $params[$parameter->getName()] = array(
                     'name' => $parameter->getName(),
-                    'type' => null //PMJ hack
+                    'type' => null //PMJ
             );
     
             if ($parameter->isDefaultValueAvailable()) {
                 $params[$parameter->getName()]['default'] = $parameter->getDefaultValue();
             }
         }
-        
-        $annotations = array_filter($this->getParser()->getAnnotations(), function ($v) {
+        $paramAnnotations = array_filter($this->annotations, function ($v) {
             $e = explode(' ', $v);
             return isset($e[0]) && $e[0] == '@param';
         });
-
-        foreach ($annotations as $parameter) {   
+        foreach ($paramAnnotations as $parameter) {   
             $parts = explode(' ', $parameter);
 
             if (count($parts) < 3) {
@@ -92,7 +105,6 @@ class FunctionElement extends Sphpdox\Element\MethodElement
                         $this->getParameters(),
                         $return ? array($return) : array()
         );
-    
         if ($annotations) {
             $string .= $this->indent(implode("\n", $annotations), 4) . "\n";
         }
@@ -111,20 +123,14 @@ class OmekaGlobalsDocumentor {
     
     public function __construct($functionName) {
 
-
         $reflection = new ReflectionFunction($functionName);
         $this->reflection = $reflection;
      //   $parameters = $this->reflection->getParameters();
-
      //   $this->functionName = $functionName;
         $file = PATH_TO_DOCUMENTATION_GLOBALS . $this->getFunctionName() . ".rst";
-        
         $this->buildSubFiles();
         $rst = $this->buildFile();
-        
-        
         file_put_contents($file, $rst);
-        
         //PMJ hack for packages. lamely saving a second copy of the same file so the indices
         //are easier to make
         $package = $this->getPackage();
@@ -141,7 +147,6 @@ class OmekaGlobalsDocumentor {
         
         
         $package = str_replace('\\', '/', $package);
-        //echo "\n$package\n";
         $serializedMap = file_get_contents('/var/www/html/sphpdox/vendor/sphpdox/sphpdox/serializedPackagesMap.txt');
         
         $packagesMap = unserialize($serializedMap);        
@@ -204,22 +209,22 @@ class OmekaGlobalsDocumentor {
         $template .= "$headingBar\n\n";
         
         $package = $this->getPackage();
-        $exploded = explode('\\', $package);
-        $packagePart =  array_pop($exploded);
-        $packageText = "$packagePart-related functions";
-        
-        if($package) {       
+
+        if($package) {
+            $exploded = explode('\\', $package);
+            $packagePart =  array_pop($exploded);
+            $packageText = "$packagePart-related functions";
             $packagePath = str_replace("\\", "/", $package);
+            print_r($exploded);
             $template .= ":doc:`$packageText </Reference/packages/$packagePath/index>`";
             $template .= "\n\n";
         } else {
-            echo "\nNo package: $functionName";
+            echo "\nNo package: $functionName \n";
         }
-        
         $template .= $this->getSummary() . "\n\n";
         $template .= $this->getRest() . "\n\n";
         $template .= $this->getUsage() . "\n\n";
-        $template .= $this->getExamples() . "\n\n"; 
+        $template .= $this->getExamples() . "\n\n";
         $template .= $this->getSeeAlso() . "\n\n";
         return $template;
     }
@@ -295,10 +300,15 @@ $globals = $allFunctions['user'];
 //$globals = array('fire_plugin_hook');
 $functions = '';
 foreach($globals as $function) {
-   //echo "$function\n";
-   $functions .= "$function\n";
+   echo "$function\n";
+   if ($function == '_log') {
+       continue;
+   }
    //file_put_contents('functions.txt', $functions);
-   $fcn = new OmekaGlobalsDocumentor($function);
-
+   try {
+       $fcn = new OmekaGlobalsDocumentor($function);
+   } catch (Exception $e) {
+       echo $e->getMessage();
+   }
 }
 
