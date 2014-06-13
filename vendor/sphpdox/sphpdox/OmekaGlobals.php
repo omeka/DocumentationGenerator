@@ -54,13 +54,21 @@ class FunctionElement extends Sphpdox\Element\MethodElement
         $parameters = $this->reflection->getParameters();
         
         foreach ($parameters as $parameter) {
-            $params[$parameter->getName()] = array(
+            $paramName = $parameter->getName();
+            $params[$paramName] = array(
                     'name' => $parameter->getName(),
                     'type' => null //PMJ
             );
     
             if ($parameter->isDefaultValueAvailable()) {
-                $params[$parameter->getName()]['default'] = $parameter->getDefaultValue();
+                $functionName = $this->reflection->getName();
+                if ($functionName == '_log' && $paramName == 'priority') {
+                    //the parser tries to evaluate Zend_Log::INFO, but Zend_Log doesn't exist
+                    $params[$paramName]['default'] = 'Zend_Log::INFO';    
+                } else {
+                    $params[$paramName]['default'] = $parameter->getDefaultValue();
+                }
+                
             }
         }
         $paramAnnotations = array_filter($this->annotations, function ($v) {
@@ -215,7 +223,6 @@ class OmekaGlobalsDocumentor {
             $packagePart =  array_pop($exploded);
             $packageText = "$packagePart-related functions";
             $packagePath = str_replace("\\", "/", $package);
-            print_r($exploded);
             $template .= ":doc:`$packageText </Reference/packages/$packagePath/index>`";
             $template .= "\n\n";
         } else {
@@ -297,12 +304,12 @@ class OmekaGlobalsDocumentor {
 $allFunctions = get_defined_functions();
 $globals = $allFunctions['user'];
 //$globals = array('is_allowed');
-//$globals = array('fire_plugin_hook');
+$globals = array('_log');
 $functions = '';
 foreach($globals as $function) {
    echo "$function\n";
    if ($function == '_log') {
-       continue;
+   //    continue;
    }
    //file_put_contents('functions.txt', $functions);
    try {
