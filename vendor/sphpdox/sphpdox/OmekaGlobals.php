@@ -6,8 +6,10 @@
  * 
  * 
  */
+use TokenReflection\Broker;
 
 error_reporting(E_ALL);
+ini_set('display_errors', 1);
 $path = realpath(__DIR__ . '/../../..');
 define('DOCGENERATOR_DIR', $path );
 define('SPHPDOX_DIR', __DIR__);
@@ -15,11 +17,11 @@ define('PATH_TO_OMEKA_GLOBALS', '/var/www/Omeka/application/libraries/globals.ph
 define('PATH_TO_DOCUMENTATION_GLOBALS', "/var/www/Documentation/source/Reference/libraries/globals/");
 
 //require_once '/var/www/Omeka/bootstrap.php';
-require_once(PATH_TO_OMEKA_GLOBALS);
+//require_once(PATH_TO_OMEKA_GLOBALS);
 require_once(DOCGENERATOR_DIR . '/vendor/sphpdox/sphpdox/lib/Sphpdox/CommentParser.php');
 require_once(DOCGENERATOR_DIR . '/vendor/sphpdox/sphpdox/lib/Sphpdox/Element/Element.php');
 require_once(DOCGENERATOR_DIR . '/vendor/sphpdox/sphpdox/lib/Sphpdox/Element/MethodElement.php');
-
+require_once(DOCGENERATOR_DIR . '/vendor/autoload.php');
 class FunctionElement extends Sphpdox\Element\MethodElement
 {
     public $package = null;
@@ -46,57 +48,11 @@ class FunctionElement extends Sphpdox\Element\MethodElement
         }
 
     }
-    
-    protected function getParameterInfo()
+    public function getShortDescription()
     {
-        $params = array();
-    
-        $parameters = $this->reflection->getParameters();
-        
-        foreach ($parameters as $parameter) {
-            $paramName = $parameter->getName();
-            $params[$paramName] = array(
-                    'name' => $parameter->getName(),
-                    'type' => null //PMJ
-            );
-    
-            if ($parameter->isDefaultValueAvailable()) {
-                $functionName = $this->reflection->getName();
-                if ($functionName == '_log' && $paramName == 'priority') {
-                    //the parser tries to evaluate Zend_Log::INFO, but Zend_Log doesn't exist
-                    $params[$paramName]['default'] = 'Zend_Log::INFO';    
-                } else {
-                    $params[$paramName]['default'] = $parameter->getDefaultValue();
-                }
-                
-            }
-        }
-        $paramAnnotations = array_filter($this->annotations, function ($v) {
-            $e = explode(' ', $v);
-            return isset($e[0]) && $e[0] == '@param';
-        });
-        foreach ($paramAnnotations as $parameter) {   
-            $parts = explode(' ', $parameter);
+        return $this->getParser()->getShortDescription();
+    }
 
-            if (count($parts) < 3) {
-                continue;
-            }
-
-            $type = $parts[1];
-            $name = str_replace('$', '', $parts[2]);
-            $comment = implode(' ', array_slice($parts, 3));
-           
-                  
-            if (isset($params[$name])) {
-                if ($params[$name]['type'] == null) {
-                    $params[$name]['type'] = $type;
-                }
-                $params[$name]['comment'] = $comment;
-            }
-        }
-  
-        return $params;
-    }    
     public function __toString()
     {
         $string = sprintf(".. php:function:: %s(%s)\n\n", $this->reflection->getName(), $this->getArguments());
@@ -129,12 +85,10 @@ class OmekaGlobalsDocumentor {
     public $reflection;
     public $functionName;
     
-    public function __construct($functionName) {
+    public function __construct($reflection) {
 
-        $reflection = new ReflectionFunction($functionName);
         $this->reflection = $reflection;
-     //   $parameters = $this->reflection->getParameters();
-     //   $this->functionName = $functionName;
+        $functionName = $this->getFunctionName();
         $file = PATH_TO_DOCUMENTATION_GLOBALS . $this->getFunctionName() . ".rst";
         $this->buildSubFiles();
         $rst = $this->buildFile();
@@ -196,7 +150,7 @@ class OmekaGlobalsDocumentor {
             $functionName = '__ (double underscore)';
         }        
         $template = "";
-        
+        $rstObject = $this->getRest();
         //phpdomain collides function ids and header ids
         //so for globals documnetation put in a hack label
         //to be different, and we'll just have to remember to use
@@ -206,14 +160,15 @@ class OmekaGlobalsDocumentor {
         
         $template .= ".. _$label:\n\n";
         
-        
-        $functionNameLength = strlen($functionName);
+        $description = $rstObject->getShortDescription();
+        $functionAndDescription = "``$functionName``" . ' — ' . $description;
+        $headingLength = strlen($functionAndDescription);
         $headingBar = "";
-        for($i = 0; $i < $functionNameLength; $i++) {
+        for($i = 0; $i < $headingLength; $i++) {
             $headingBar .= "#";
         }
         $template .= "$headingBar\n";
-        $template .=  $functionName . "\n";
+        $template .=  "$functionAndDescription\n";
         $template .= "$headingBar\n\n";
         
         $package = $this->getPackage();
@@ -229,7 +184,7 @@ class OmekaGlobalsDocumentor {
             echo "\nNo package: $functionName \n";
         }
         $template .= $this->getSummary() . "\n\n";
-        $template .= $this->getRest() . "\n\n";
+        $template .= $rstObject . "\n\n";
         $template .= $this->getUsage() . "\n\n";
         $template .= $this->getExamples() . "\n\n";
         $template .= $this->getSeeAlso() . "\n\n";
@@ -300,18 +255,10 @@ class OmekaGlobalsDocumentor {
     }
     
 }
-
-$allFunctions = get_defined_functions();
-$globals = $allFunctions['user'];
-//$globals = array('is_allowed');
-$globals = array('_log');
-$functions = '';
-foreach($globals as $function) {
-   echo "$function\n";
-   if ($function == '_log') {
-   //    continue;
-   }
-   //file_put_contents('functions.txt', $functions);
+$broker = new \TokenReflection\Broker(new \TokenReflection\Broker\Backend\Memory());
+$file = $broker->processFile(PATH_TO_OMEKA_GLOBALS, true);
+$functions = $broker->getFunctions();
+foreach($functions as $function) {
    try {
        $fcn = new OmekaGlobalsDocumentor($function);
    } catch (Exception $e) {
