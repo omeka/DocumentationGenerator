@@ -84,9 +84,13 @@ dirs=(
     views
     views/helpers)
 #dirs=(    
-#    controllers
-#	controllers/api
-#    controllers/helpers
+#    libraries/Omeka/File
+#    libraries/Omeka/File/Ingest
+#    libraries/Omeka/File/MimeType
+#    libraries/Omeka/File/MimeType/Detect
+#    libraries/Omeka/File/MimeType/Detect/Strategy
+#    libraries/Omeka/File/Derivative
+#    libraries/Omeka/File/Derivative/Strategy
 #)        
 for dir in ${dirs[@]}
 do

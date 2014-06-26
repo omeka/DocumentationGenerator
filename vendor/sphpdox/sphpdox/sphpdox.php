@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+ini_set('display_errors', 1);
 $path = realpath(__DIR__ . '/../../..');
 define('DOCGENERATOR_DIR', $path );
 define('SPHPDOX_DIR', __DIR__);

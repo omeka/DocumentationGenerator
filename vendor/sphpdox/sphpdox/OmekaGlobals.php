@@ -35,23 +35,23 @@ class FunctionElement extends Sphpdox\Element\MethodElement
     
     public function getPackage()
     {
-        $packageAnnotations = array_filter($this->annotations, function ($v) {
-            $e = explode(' ', $v);
-            return isset($e[0]) && $e[0] == '@package';
-        });
-        if (empty($packageAnnotations)) {
-            return '';
-        } else {
-            $packageAnnotation = $packageAnnotations[0];
-            $exploded = explode(' ', $packageAnnotation);
-            return $exploded[1];            
-        }
-
+        $packageArray = $this->getParser()->getAnnotationsByName('package');
+        $exploded = explode(' ', $packageArray[0]);
+        $package = $exploded[1];
+        $package = str_replace("Omeka\\", '', $package);
+        return $package;
     }
+    
     public function getShortDescription()
     {
         return $this->getParser()->getShortDescription();
     }
+    
+    public function getAnnotationsByName($name)
+    {
+        return $this->getParser()->getAnnotationsByName($name);
+    }
+    
 
     public function __toString()
     {
@@ -98,48 +98,34 @@ class OmekaGlobalsDocumentor {
         $package = $this->getPackage();
         if($package)  {
 
-        
-
-        //PMJ build the info for package links
-        //arrays of package name and references to where in the documentation the
-        //actual file is.
-        //a separate script will need to read the array once all the
-        //documentation has been built and from that build the packages
-        //directory with correct :doc: references back to the file
-        
-        
-        $package = str_replace('\\', '/', $package);
-        $serializedMap = file_get_contents('/var/www/html/sphpdox/vendor/sphpdox/sphpdox/serializedPackagesMap.txt');
-        
-        $packagesMap = unserialize($serializedMap);        
-        $packagesMap['Function'] = array();
-        $packagesMap[$package][] = array('name' => $functionName,
-                'path' => '/Reference/libraries/globals/' . $functionName
-                );
-        
-        file_put_contents('/var/www/html/sphpdox/vendor/sphpdox/sphpdox/serializedPackagesMap.txt', serialize($packagesMap));
+            
+    
+            //PMJ build the info for package links
+            //arrays of package name and references to where in the documentation the
+            //actual file is.
+            //a separate script will need to read the array once all the
+            //documentation has been built and from that build the packages
+            //directory with correct :doc: references back to the file
+            
+            
+            $package = str_replace('\\', '/', $package);
+            $serializedMap = file_get_contents(SPHPDOX_DIR .  '/serializedPackagesMap.txt');
+            
+            $packagesMap = unserialize($serializedMap);        
+            $packagesMap['Function'] = array();
+            $packagesMap[$package][] = array('name' => $functionName,
+                    'path' => '/Reference/libraries/globals/' . $functionName
+                    );
+            
+            file_put_contents(SPHPDOX_DIR . '/serializedPackagesMap.txt', serialize($packagesMap));
                     
-        /*
+        
             
             $packagePath = str_replace("\\", "/", $package);
-            $path = "/var/www/html/Documentation/source/Reference/packages/$packagePath";
+            $path = "/var/www/Documentation/source/Reference/packages/$packagePath";
             if(!is_dir($path)) {
                 mkdir($path, 0777 ,true);
             }
-
-            file_put_contents($path . "/" . $this->getFunctionName() . ".rst", $rst);
-                                
-            $exploded = explode('\\', $package);
-            $packagePart =  array_pop($exploded);
-            $packageText = "$packagePart-related functions";
-            $packageNameLength = strlen($packageText);
-            
-            $headingBar = "";
-            for($i = 0; $i < $packageNameLength; $i++) {
-                $headingBar .= "#";
-            }
-
-            */
         }
     }
 
@@ -170,6 +156,14 @@ class OmekaGlobalsDocumentor {
         $template .= "$headingBar\n";
         $template .=  "$functionAndDescription\n";
         $template .= "$headingBar\n\n";
+        
+        $sinceArray = $rstObject->getAnnotationsByName('since');
+        if (!empty($sinceArray)) {
+            $since = $sinceArray[0];
+            $exploded = explode(' ', $since);
+            $since = $exploded[1];
+            $template .= ".. versionadded:: $since\n\n";
+        }
         
         $package = $this->getPackage();
 

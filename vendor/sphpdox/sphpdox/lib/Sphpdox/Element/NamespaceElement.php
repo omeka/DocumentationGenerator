@@ -107,7 +107,7 @@ class NamespaceElement extends Element
         $target = $this->ensureBuildDir($basedir, $output);
         
         
-        $serializedMap = file_get_contents(SPHPDOX_DIR . 'serializedPackagesMap.txt');
+        $serializedMap = file_get_contents(SPHPDOX_DIR . '/serializedPackagesMap.txt');
         $packagesMap = unserialize($serializedMap);
         if(!is_array($packagesMap)) {
             $packagesMap = array();
@@ -115,7 +115,7 @@ class NamespaceElement extends Element
             
             $packagesMap['File'] = array();
             //Same with Controller/ActionHelper
-            $packagesMap['Controller/ActionHelper'] = array();
+            //$packagesMap['Controller/ActionHelper'] = array();
         }
         
         foreach ($this->getClasses() as $element) {
@@ -151,17 +151,14 @@ class NamespaceElement extends Element
             //documentation has been built and from that build the packages
             //directory with correct :doc: references back to the file
             
-            /*
+            
             $package = $element->getPackage();
             $package = str_replace('\\', '/', $package);
             
             $packagesMap[$package][] = array('name' => $element->getName(), 
-                                              'path' => str_replace('/var/www/Documentation/source', '',  $element->file)
+                                             'path' => str_replace('/var/www/Documentation/source', '',  $element->file)
                                               );
             file_put_contents('/var/www/DocumentationGenerator/vendor/sphpdox/sphpdox/serializedPackagesMap.txt', serialize($packagesMap));
-            */
-            
-            
         }
     }
 

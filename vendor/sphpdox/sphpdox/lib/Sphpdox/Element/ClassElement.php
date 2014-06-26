@@ -30,6 +30,9 @@ class ClassElement extends Element
 
     public function getPath()
     {
+        $shortName = $this->reflection->getShortName();
+        $exploded = explode('_', $shortName);
+        return array_pop($exploded) . '.rst';
         return $this->reflection->getShortName() . '.rst';
     }
 
@@ -40,6 +43,7 @@ class ClassElement extends Element
     public function build($basedir, OutputInterface $output)
     {
         $file = $basedir . DIRECTORY_SEPARATOR . $this->getPath();
+        $this->file = $file;
         file_put_contents($file, $this->__toString());
     }
 
@@ -51,12 +55,24 @@ class ClassElement extends Element
         $name = $this->reflection->getName();
 
         $title = str_replace('\\', '\\\\', $name);
-        //$title = $name;
 
         $string = str_repeat('-', strlen($title)) . "\n";
         $string .= $title . "\n";
         $string .= str_repeat('-', strlen($title)) . "\n\n";
         //$string .= $this->getNamespaceElement();
+    
+        /* PMJ hacks to add @package info */
+        $package = $this->getPackage();
+        
+        $escapedPackage = str_replace("\\", "\\\\", $package);
+        $packageNameLength = strlen($escapedPackage);
+        $packagePath = str_replace("\\", "/", $package);
+        
+        if($package) {
+            $string .= "Package: :doc:`$escapedPackage </Reference/packages/$packagePath/index>`";
+            $string .= "\n\n";
+        }
+        
         //PMJ check if interface
         if ($this->reflection->isInterface()) {
             $string .= '.. php:interface:: ' . $this->reflection->getShortName();
@@ -76,10 +92,10 @@ class ClassElement extends Element
                 $string .= "\nimplements :php:interface:`$interface`";
             }
         }
-        
 
         $parser = $this->getParser();
 
+        
         if ($description = $parser->getDescription()) {
             $string .= "\n\n";
             $string .= $this->indent($description, 4);
@@ -139,5 +155,23 @@ class ClassElement extends Element
         return '.. php:namespace: '
             . str_replace('\\', '\\\\', $this->reflection->getNamespaceName())
             . "\n\n";
+    }
+    
+    public function getPackage()
+    {
+        $packageArray = $this->getParser()->getAnnotationsByName('package');
+        if (empty($packageArray)) {
+            echo $this->getName();
+        }
+        $exploded = explode(' ', $packageArray[0]);
+        $package = $exploded[1];
+        $package = str_replace("Omeka\\", '', $package);
+        return $package;
+    }
+
+    //PMJ added to access the name when I build package info in NamespaceElement
+    public function getName()
+    {
+        return $this->reflection->getName();
     }
 }
