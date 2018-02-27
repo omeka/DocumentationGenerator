@@ -126,6 +126,10 @@ class NamespaceElement extends Element
             $penultimateClassNameIndex = count($explodedClassName) -2; 
             $penultimateTargetIndex = count($explodedTarget) -1;
             
+            if ($penultimateClassNameIndex == -1) {
+                $penultimateClassNameIndex = 0;
+            }
+            $output->writeln($className);
             $classNameMatch = strtolower($explodedClassName[$penultimateClassNameIndex]);
             $targetMatch = strtolower($explodedTarget[$penultimateTargetIndex]);
             $targetMatches = array($targetMatch, trim($targetMatch, 's'));
@@ -158,7 +162,7 @@ class NamespaceElement extends Element
             $packagesMap[$package][] = array('name' => $element->getName(), 
                                              'path' => str_replace('/var/www/Documentation/source', '',  $element->file)
                                               );
-            file_put_contents('/var/www/DocumentationGenerator/vendor/sphpdox/sphpdox/serializedPackagesMap.txt', serialize($packagesMap));
+            file_put_contents('/var/www/html/DocumentationGenerator/vendor/sphpdox/sphpdox/serializedPackagesMap.txt', serialize($packagesMap));
         }
     }
 

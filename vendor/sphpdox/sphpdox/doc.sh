@@ -83,7 +83,7 @@ dirs=(
     controllers/helpers
     views
     views/helpers)
-#dirs=(    
+#dirs=(
 #    libraries/Omeka/File
 #    libraries/Omeka/File/Ingest
 #    libraries/Omeka/File/MimeType
@@ -91,10 +91,10 @@ dirs=(
 #    libraries/Omeka/File/MimeType/Detect/Strategy
 #    libraries/Omeka/File/Derivative
 #    libraries/Omeka/File/Derivative/Strategy
-#)        
+#)
 for dir in ${dirs[@]}
 do
-    ./sphpdox.php process -o /var/www/Documentation/source/Reference/${dir} -t ${dir} no-namespace /var/www/Omeka/application/${dir}  
+    ./sphpdox.php process -o /var/www/html/Documentation/source/Reference/${dir} -t ${dir} no-namespace /var/www/html/Omeka/application/${dir}
 done
 
 
