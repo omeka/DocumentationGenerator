@@ -160,7 +160,7 @@ class NamespaceElement extends Element
             $package = str_replace('\\', '/', $package);
             
             $packagesMap[$package][] = array('name' => $element->getName(), 
-                                             'path' => str_replace('/var/www/Documentation/source', '',  $element->file)
+                                             'path' => str_replace('/var/www/html/Documentation/source', '',  $element->file)
                                               );
             file_put_contents('/var/www/html/DocumentationGenerator/vendor/sphpdox/sphpdox/serializedPackagesMap.txt', serialize($packagesMap));
         }
